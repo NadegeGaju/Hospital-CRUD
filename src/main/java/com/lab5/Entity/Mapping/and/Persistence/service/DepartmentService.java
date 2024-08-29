@@ -1,32 +1,47 @@
 package com.lab5.Entity.Mapping.and.Persistence.service;
 
+import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.transaction.annotation.Transactional;
 import com.lab5.Entity.Mapping.and.Persistence.model.DepartmentModel;
 import com.lab5.Entity.Mapping.and.Persistence.repository.DepartmentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class DepartmentService {
 
-    @Autowired
-    private DepartmentRepository departmentRepository;
+    private final DepartmentRepository departmentRepository;
 
-    public DepartmentModel saveDepartment(DepartmentModel department) {
+    public DepartmentService(DepartmentRepository departmentRepository) {
+        this.departmentRepository = departmentRepository;
+    }
+
+    @Transactional
+    public DepartmentModel createDepartment(DepartmentModel department) {
         return departmentRepository.save(department);
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable("departments")
     public List<DepartmentModel> getAllDepartments() {
         return departmentRepository.findAll();
     }
 
-    public Optional<DepartmentModel> getDepartmentById(Long id) {
-        return departmentRepository.findById(id);
+    @Transactional
+    public DepartmentModel updateDepartment(Long id, DepartmentModel department) {
+        department.setCode(id);
+        return departmentRepository.save(department);
     }
 
+    @CacheEvict(value = "departments", allEntries = true)
     public void deleteDepartment(Long id) {
         departmentRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable("departments")
+    public DepartmentModel getDepartmentById(Long id) {
+        return departmentRepository.findById(id).orElse(null);
     }
 }
